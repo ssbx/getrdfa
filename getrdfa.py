@@ -15,37 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Proof-of-concept union catalogue via sitemaps + schema.org
+#
+# from https://github.com/dbs/schema-unioncat
+#
 
-This script currently takes a sitemap URL as a starting point, determines if
-there are any linked sitemaps, and crawls all of the URLs it is given with a
-singular goal of extracting schema.org structured data from each URL.
-
-By default the script expects to find the metadata marked up in RDFa, but you
-can control that via a command line switch. For example, "-p microdata" will
-tell the script to parse the metadata in a given URL as microdata instead.
-
-By default the script generates n3 output, but you can control that via a
-command line switch. For example, "-t turtle" generates turtle output.
-
-There are many improvements to be made to this script before it would be
-suitable for a real life deployment:
-
-* It currently has no idea when the last time it was run, so it will blindly
-  crawl every URL in the sitemaps--even if the sitemaps contain <lastmod>
-  elements that would enable it to only crawl those URLs that have changed
-  since the last time it has run.
-
-* Also, thus far the script has no opinion about where the retrieved metadata
-  should be stored. One could target a triple store or a relational database,
-  for example--but a more functional script should probably work out of the
-  box with _something_ to provides some simple search capabilities.
-
-* sitemaps.org encourages site owners to gzip-compress large sitemaps, but
-  this script currently simply blindly expects regular XML and would have
-  a horrendous time trying to parse a gzipped XML file.
-"""
 import logging
 import sys
 
@@ -74,37 +47,6 @@ def url_value(url):
     for node in locs[0].childNodes:
         if node.nodeType == node.TEXT_NODE:
             return node.nodeValue
-
-def parse_sitemap_urls(sitemap):
-    "Parse the URLs from a sitemap file"
-    rv = []
-    sitemap = urlopen(sitemap)
-
-    if sitemap.getcode() < 400:
-        doc = parse(sitemap)
-        for url in doc.getElementsByTagName('url'):
-            rv.append(url_value(url))
-    return rv
-
-def parse_sitemap_sitemaps(url):
-    "Parse the list of linked sitemaps from a sitemap file"
-    sitemaps = []
-    url = urlopen(url)
-    doc = parse(url)
-    for sitemap in doc.getElementsByTagName('sitemap'):
-        sitemaps.append(url_value(sitemap))
-    return sitemaps
-
-def parse_sitemap(url):
-    "Parse a sitemap file, including linked sitemaps"
-    urls = []
-    sitemaps = parse_sitemap_sitemaps(url)
-    if sitemaps:
-        for sitemap in sitemaps:
-            urls += parse_sitemap_urls(sitemap)
-    else:
-        urls += parse_sitemap_urls(url)
-    return(urls)
 
 def extract_rdfa(url, outfile=sys.stdout, parser="rdfa", serializer="n3"):
     """
